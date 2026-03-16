@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>LogSherlock — AI Log Analysis</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+
+:root{
+--bg:#050814;
+--surface:#0b1226;
+--surface2:#121a33;
+--border:#1e2a52;
+
+--accent:#3da9fc;
+--accent2:#7f8cff;
+--accent3:#ff4e6a;
+
+--text:#e8ecff;
+--muted:#6c78a6;
+--code:#4fd1ff;
+}
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
+background:var(--bg);
+color:var(--text);
+font-family:'Syne',sans-serif;
+overflow-x:hidden;
+}
+
+nav{
+position:fixed;
+top:0;
+left:0;
+right:0;
+
+display:flex;
+justify-content:space-between;
+align-items:center;
+
+padding:1.2rem 3rem;
+
+background:rgba(5,8,20,0.85);
+border-bottom:1px solid var(--border);
+
+backdrop-filter:blur(14px);
+z-index:100;
+}
+
+.nav-logo{
+font-family:'Space Mono',monospace;
+font-size:1.1rem;
+font-weight:700;
+color:var(--accent);
+text-decoration:none;
+}
+
+.nav-logo span{
+color:var(--muted);
+}
+
+.nav-right{
+font-family:'Space Mono',monospace;
+font-size:0.7rem;
+color:var(--muted);
+letter-spacing:.08em;
+}
+
+#hero{
+min-height:100vh;
+display:flex;
+flex-direction:column;
+justify-content:center;
+
+padding:8rem 3rem 4rem;
+position:relative;
+}
+
+.hero-grid{
+position:absolute;
+inset:0;
+
+background-image:
+linear-gradient(rgba(61,169,252,0.04) 1px,transparent 1px),
+linear-gradient(90deg,rgba(61,169,252,0.04) 1px,transparent 1px);
+
+background-size:60px 60px;
+
+animation:gridMove 20s linear infinite;
+}
+
+@keyframes gridMove{
+
+0%{
+transform:translate(0,0)
+}
+
+100%{
+transform:translate(60px,60px)
+}
+
+}
+
+.hero-badge{
+
+display:inline-flex;
+align-items:center;
+gap:.5rem;
+
+font-family:'Space Mono',monospace;
+font-size:.7rem;
+
+color:var(--accent);
+
+border:1px solid rgba(61,169,252,0.3);
+
+padding:.35rem .8rem;
+
+margin-bottom:2rem;
+
+}
+
+h1{
+
+font-size:clamp(3rem,8vw,6rem);
+font-weight:800;
+line-height:.95;
+
+letter-spacing:-.03em;
+
+margin-bottom:2rem;
+
+}
+
+.line2{
+color:var(--accent)
+}
+
+.line3{
+color:var(--muted)
+}
+
+.hero-sub{
+
+font-family:'Space Mono',monospace;
+font-size:.85rem;
+
+color:var(--muted);
+
+max-width:480px;
+line-height:1.8;
+
+margin-bottom:3rem;
+
+}
+
+.btn-primary{
+
+font-family:'Space Mono',monospace;
+font-size:.8rem;
+
+padding:.9rem 2rem;
+
+background:var(--accent);
+color:var(--bg);
+
+border:none;
+
+font-weight:700;
+letter-spacing:.05em;
+
+text-transform:uppercase;
+
+cursor:pointer;
+
+text-decoration:none;
+
+display:inline-block;
+
+}
+
+#demo{
+
+padding:5rem 3rem 6rem;
+
+}
+
+.demo-title{
+
+font-size:clamp(2rem,3vw,3rem);
+
+font-weight:800;
+
+margin-bottom:2.5rem;
+
+}
+
+.demo-container{
+
+display:grid;
+grid-template-columns:1fr 1fr;
+
+gap:2px;
+
+background:var(--border);
+
+border:1px solid var(--border);
+
+max-width:1100px;
+
+}
+
+.demo-panel{
+
+background:var(--surface);
+
+}
+
+.panel-header{
+
+display:flex;
+align-items:center;
+
+gap:.7rem;
+
+padding:.8rem 1.2rem;
+
+border-bottom:1px solid var(--border);
+
+background:var(--surface2);
+
+}
+
+.panel-title{
+
+font-family:'Space Mono',monospace;
+
+font-size:.7rem;
+
+color:var(--muted);
+
+letter-spacing:.08em;
+
+text-transform:uppercase;
+
+flex:1;
+
+}
+
+.status-live{
+
+font-family:'Space Mono',monospace;
+
+font-size:.6rem;
+
+padding:.15rem .5rem;
+
+background:rgba(61,169,252,0.15);
+
+color:var(--accent);
+
+}
+
+.log-area{
+
+padding:1rem 1.2rem;
+
+font-family:'Space Mono',monospace;
+
+font-size:.7rem;
+
+line-height:1.9;
+
+height:320px;
+
+overflow-y:auto;
+
+}
+
+.log-line{
+display:flex;
+gap:1rem;
+}
+
+.log-time{
+color:var(--muted);
+min-width:55px;
+}
+
+.log-level-error{
+color:var(--accent3)
+}
+
+.log-level-warn{
+color:#ffaa00
+}
+
+.log-level-info{
+color:var(--code)
+}
+
+.log-msg{
+opacity:.75
+}
+
+.input-area{
+
+padding:1rem 1.2rem;
+
+border-top:1px solid var(--border);
+
+display:flex;
+
+gap:.5rem;
+
+}
+
+.log-input{
+
+flex:1;
+
+background:var(--bg);
+
+border:1px solid var(--border);
+
+color:var(--text);
+
+font-family:'Space Mono',monospace;
+
+font-size:.7rem;
+
+padding:.6rem .8rem;
+
+resize:none;
+
+height:60px;
+
+}
+
+.analyze-btn{
+
+font-family:'Space Mono',monospace;
+
+font-size:.65rem;
+
+padding:.6rem 1rem;
+
+background:var(--accent);
+
+color:var(--bg);
+
+border:none;
+
+font-weight:700;
+
+letter-spacing:.05em;
+
+text-transform:uppercase;
+
+height:60px;
+
+cursor:pointer;
+
+}
+
+.rca-output{
+
+padding:1.2rem;
+
+height:390px;
+
+overflow-y:auto;
+
+}
+
+.rca-card{
+
+margin-bottom:1rem;
+
+border:1px solid var(--border);
+
+}
+
+.rca-card-header{
+
+padding:.6rem .8rem;
+
+font-family:'Space Mono',monospace;
+
+font-size:.65rem;
+
+font-weight:700;
+
+text-transform:uppercase;
+
+letter-spacing:.1em;
+
+}
+
+.card-error{
+
+background:rgba(255,78,106,.1);
+
+color:var(--accent3);
+
+}
+
+.card-analysis{
+
+background:rgba(79,209,255,.08);
+
+color:var(--code);
+
+}
+
+.card-fix{
+
+background:rgba(61,169,252,.1);
+
+color:var(--accent);
+
+}
+
+.card-ticket{
+
+background:rgba(127,140,255,.12);
+
+color:var(--accent2);
+
+}
+
+.rca-card-body{
+
+padding:.8rem;
+
+font-family:'Space Mono',monospace;
+
+font-size:.68rem;
+
+line-height:1.8;
+
+opacity:.85;
+
+}
+
+.empty-state{
+
+display:flex;
+
+flex-direction:column;
+
+align-items:center;
+
+justify-content:center;
+
+height:100%;
+
+gap:.8rem;
+
+color:var(--muted);
+
+}
+
+.empty-text{
+
+font-family:'Space Mono',monospace;
+
+font-size:.65rem;
+
+text-align:center;
+
+}
+
+</style>
+</head>
+
+<body>
+
+<nav>
+
+<a class="nav-logo">LogSherlock<span>.ai</span></a>
+
+<div class="nav-right">
+AI Log Diagnostics
+</div>
+
+</nav>
+
+<section id="hero">
+
+<div class="hero-grid"></div>
+
+<div class="hero-badge">
+AI-Powered Log Investigation
+</div>
+
+<h1>
+
+<span>Investigate</span><br>
+<span class="line2">Logs</span><br>
+<span class="line3">Instantly.</span>
+
+</h1>
+
+<p class="hero-sub">
+
+Paste logs and LogSherlock detects errors, finds the root cause,
+and suggests a fix in seconds using AI-powered analysis.
+
+</p>
+
+<a href="#demo" class="btn-primary">
+Try Demo
+</a>
+
+</section>
+
+<section id="demo">
+
+<h2 class="demo-title">
+Paste logs and uncover the root cause
+</h2>
+
+<div class="demo-container">
+
+<div class="demo-panel">
+
+<div class="panel-header">
+
+<span class="panel-title">
+production-logs
+</span>
+
+<span class="status-live">
+LIVE
+</span>
+
+</div>
+
+<div class="log-area" id="logArea">
+
+<div class="log-line">
+<span class="log-time">02:14:31</span>
+<span class="log-level-info">INFO</span>
+<span class="log-msg">Service started on port 8080</span>
+</div>
+
+<div class="log-line">
+<span class="log-time">02:15:22</span>
+<span class="log-level-error">ERROR</span>
+<span class="log-msg">NullPointerException in PaymentProcessor.java:142</span>
+</div>
+
+</div>
+
+<div class="input-area">
+
+<textarea class="log-input" id="logInput" placeholder="Paste logs here..."></textarea>
+
+<button class="analyze-btn" onclick="runAnalysis()">
+Analyze
+</button>
+
+</div>
+
+</div>
+
+<div class="demo-panel">
+
+<div class="panel-header">
+
+<span class="panel-title">
+LogSherlock Analysis
+</span>
+
+</div>
+
+<div class="rca-output" id="rcaOutput">
+
+<div class="empty-state">
+
+<div class="empty-text">
+Paste logs and click Analyze
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+<script>
+
+function runAnalysis(){
+
+const out=document.getElementById("rcaOutput")
+
+out.innerHTML=
+
+`
+
+<div class="rca-card">
+
+<div class="rca-card-header card-error">
+Detected Exception
+</div>
+
+<div class="rca-card-body">
+NullPointerException detected in PaymentProcessor.java
+</div>
+
+</div>
+
+<div class="rca-card">
+
+<div class="rca-card-header card-analysis">
+Root Cause
+</div>
+
+<div class="rca-card-body">
+Database connection pool exhausted causing null object reference
+</div>
+
+</div>
+
+<div class="rca-card">
+
+<div class="rca-card-header card-ticket">
+Matched Historical Ticket
+</div>
+
+<div class="rca-card-body">
+Ticket #402 — Same issue during traffic spike
+</div>
+
+</div>
+
+<div class="rca-card">
+
+<div class="rca-card-header card-fix">
+Suggested Fix
+</div>
+
+<div class="rca-card-body">
+Increase DB pool size and enable caching
+</div>
+
+</div>
+
+`
+
+}
+
+</script>
+
+</body>
+</html>
